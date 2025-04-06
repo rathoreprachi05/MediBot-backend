@@ -8,7 +8,21 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+// ✅ Allow only GitHub Pages origin to make requests
+const allowedOrigins = ["https://rathoreprachi05.github.io"];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"]
+}));
+
 app.use(bodyParser.json());
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -20,7 +34,7 @@ app.get("/", (req, res) => {
 
 app.post("/api/message", async (req, res) => {
   const userMessage = req.body.message;
-  console.log("Received message from frontend:", userMessage);
+  console.log("📩 Received message from frontend:", userMessage);
 
   const behaviorPrompt = `
 You are MediBot, a friendly AI chatbot helping users understand their medical symptoms and device-reported stats.
@@ -58,7 +72,7 @@ Your JSON reply must strictly follow this format (do not add extra text or forma
     });
 
     const data = await response.json();
-    console.log("Gemini API raw response:", data);
+    console.log("🤖 Gemini API raw response:", data);
 
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
     let reply = "Sorry, I couldn't understand that.";
@@ -74,13 +88,13 @@ Your JSON reply must strictly follow this format (do not add extra text or forma
       conditionLevel = parsed.conditionLevel || "";
       note = parsed.note || "";
     } catch (e) {
-      console.error("Failed to parse Gemini JSON:", e);
+      console.error("❌ Failed to parse Gemini JSON:", e);
       reply = rawText; // fallback to raw output
     }
 
     res.json({ reply, conditionLevel, note });
   } catch (error) {
-    console.error("Gemini API error:", error);
+    console.error("🚨 Gemini API error:", error);
     res.status(500).json({ error: "Something went wrong with Gemini API." });
   }
 });
@@ -88,4 +102,3 @@ Your JSON reply must strictly follow this format (do not add extra text or forma
 app.listen(port, () => {
   console.log(`✅ MediBot backend running on http://localhost:${port}`);
 });
-
