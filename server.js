@@ -14,6 +14,10 @@ app.use(bodyParser.json());
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent?key=${GEMINI_API_KEY}`;
 
+app.get("/", (req, res) => {
+  res.send("🚑 MediBot backend is alive!");
+});
+
 app.post("/api/message", async (req, res) => {
   const userMessage = req.body.message;
   console.log("Received message from frontend:", userMessage);
