@@ -8,7 +8,7 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ✅ Allow only GitHub Pages origin to make requests
+// Allow only GitHub Pages origin to make requests
 const allowedOrigins = ["https://rathoreprachi05.github.io"];
 
 app.use(cors({
