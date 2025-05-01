@@ -24,7 +24,8 @@ app.use(cors({
 app.use(bodyParser.json());
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent?key=${GEMINI_API_KEY}`;
+// ✅ Updated model from deprecated `gemini-1.5-pro-002` to `gemini-1.5-pro-latest`
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${GEMINI_API_KEY}`;
 
 app.get("/", (req, res) => {
   res.send("🚑 MediBot backend is alive!");
@@ -85,7 +86,6 @@ Your JSON reply must strictly follow this format (do not add extra text or forma
     let note = "";
 
     try {
-      // Strip Markdown code formatting if present
       const cleanedText = rawText.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(cleanedText);
 
@@ -94,7 +94,7 @@ Your JSON reply must strictly follow this format (do not add extra text or forma
       note = parsed.note || "";
     } catch (e) {
       console.error("❌ Failed to parse Gemini JSON:", e);
-      reply = rawText; // Fallback to raw output
+      reply = rawText;
     }
 
     res.json({ reply, conditionLevel, note });
