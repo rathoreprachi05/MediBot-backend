@@ -8,9 +8,7 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Allow only GitHub Pages origin to make requests
 const allowedOrigins = ["https://rathoreprachi05.github.io"];
-
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -62,17 +60,24 @@ Your JSON reply must strictly follow this format (do not add extra text or forma
     ]
   };
 
+  // --- Add timeout and signal handling ---
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000); // 15 seconds
+
   try {
+    console.log("📡 Sending request to Gemini API...");
     const response = await fetch(GEMINI_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(geminiPayload)
+      body: JSON.stringify(geminiPayload),
+      signal: controller.signal
     });
+    clearTimeout(timeout);
 
     const data = await response.json();
-    console.log("🤖 Gemini API raw response:", data);
+    console.log("🤖 Gemini API raw response:", JSON.stringify(data));
 
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
     let reply = "Sorry, I couldn't understand that.";
@@ -80,7 +85,7 @@ Your JSON reply must strictly follow this format (do not add extra text or forma
     let note = "";
 
     try {
-      // Strip markdown formatting like ```json ... ```
+      // Strip Markdown code formatting if present
       const cleanedText = rawText.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(cleanedText);
 
@@ -89,12 +94,14 @@ Your JSON reply must strictly follow this format (do not add extra text or forma
       note = parsed.note || "";
     } catch (e) {
       console.error("❌ Failed to parse Gemini JSON:", e);
-      reply = rawText; // fallback to raw output
+      reply = rawText; // Fallback to raw output
     }
 
     res.json({ reply, conditionLevel, note });
+    console.log("📤 Sent processed response to frontend.");
   } catch (error) {
-    console.error("🚨 Gemini API error:", error);
+    clearTimeout(timeout);
+    console.error("🚨 Gemini API error:", error.name === "AbortError" ? "Request timed out" : error);
     res.status(500).json({ error: "Something went wrong with Gemini API." });
   }
 });
